@@ -13,24 +13,38 @@ interface RegisterFormInputs {
   role: string;
 }
 
+interface RegisterFormProps {
+  onSuccess?:() => void;
+  onError?: (error: any) => void;
+  disabled?: boolean;
+ }
+
 // TODO: 新規登録フォームコンポーネントを実装する
-const RegisterForm: React.FC = () => {
-  // 必要に応じて利用する
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterFormInputs>();
-  const router = useRouter();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+const RegisterForm: React.FC<RegisterFormProps> = ({
+    onSuccess,
+    onError,
+    disabled = false,
+  }) => {
+    const {
+      register,
+      handleSubmit,
+      formState: { errors },
+    } = useForm<RegisterFormInputs>();
+    const router = useRouter();
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = async (data) => {
     try {
-      await createUser(data); // createUserはAPI経由で登録
-      router.push("/users");  // 登録成功後、ユーザー一覧へ遷移
+      await createUser(data);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push("/users");
+      }
     } catch (error: any) {
       setErrorMessage("登録に失敗しました。もう一度お試しください。");
       console.error(error);
+      if (onError) onError(error);
     }
   };
 
@@ -48,6 +62,7 @@ const RegisterForm: React.FC = () => {
           {...register("name", { required: "名前は必須です" })}
           error={!!errors.name}
           helperText={errors.name?.message}
+          disabled={disabled}
         />
 
         <TextField
@@ -64,6 +79,7 @@ const RegisterForm: React.FC = () => {
           })}
           error={!!errors.email}
           helperText={errors.email?.message}
+          disabled={disabled}
         />
 
         <TextField
@@ -73,9 +89,10 @@ const RegisterForm: React.FC = () => {
           {...register("role", { required: "役職は必須です" })}
           error={!!errors.role}
           helperText={errors.role?.message}
+          disabled={disabled}
         />
 
-        <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+        <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }} disabled={disabled}>
           登録
         </Button>
       </form>
